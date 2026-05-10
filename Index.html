@@ -1,1037 +1,722 @@
-import { useState, useEffect, useRef, useCallback } from “react”;
+<!DOCTYPE html>
 
-const DRILLS = [
-{
-id: 1,
-name: “Triangle Passing”,
-pillar: “Passing”,
-pillarColor: “#3B82F6”,
-duration: “12 min”,
-players: “Groups of 3”,
-focus: “Short passing & movement”,
-cue: “Pass and move — never stand still!”,
-steps: [“A passes to B”, “A follows pass to B’s cone”, “B passes to C”, “B follows to C’s cone”, “C passes to A”, “C follows to A’s cone”],
-},
-{
-id: 2,
-name: “Cone Slalom Dribbling”,
-pillar: “Dribbling”,
-pillarColor: “#22C55E”,
-duration: “12 min”,
-players: “Full squad”,
-focus: “Ball control at speed”,
-cue: “Head up — feel the ball!”,
-steps: [“Player starts at cone 1”, “Weave through cones using inside/outside foot”, “Reach last cone”, “Sprint back around the outside”],
-},
-{
-id: 3,
-name: “1v1 Shooting”,
-pillar: “Finishing”,
-pillarColor: “#EF4444”,
-duration: “15 min”,
-players: “Groups of 4”,
-focus: “Finishing under pressure”,
-cue: “Stay low, use feints, shoot early!”,
-steps: [“Coach plays ball to attacker”, “Attacker drives at defender”, “Attacker uses feint to beat defender”, “Attacker shoots on goal”],
-},
-{
-id: 4,
-name: “4v2 Rondo”,
-pillar: “Passing”,
-pillarColor: “#3B82F6”,
-duration: “12 min”,
-players: “Groups of 6”,
-focus: “Keeping ball under pressure”,
-cue: “Move after every pass — create angles!”,
-steps: [“Outside players keep possession”, “Defenders try to intercept”, “Ball moves quickly around the square”, “Defenders close down space”],
-},
-{
-id: 5,
-name: “Gate Dribbling”,
-pillar: “Dribbling”,
-pillarColor: “#22C55E”,
-duration: “10 min”,
-players: “Full squad”,
-focus: “Ball control & direction changes”,
-cue: “Head up — find the next gate!”,
-steps: [“Player starts dribbling freely”, “Spot an open gate”, “Drive through the gate”, “Change direction — find another gate”],
-},
-{
-id: 6,
-name: “2v1 to Goal”,
-pillar: “Finishing”,
-pillarColor: “#EF4444”,
-duration: “12 min”,
-players: “Groups of 4”,
-focus: “Combination play & overlaps”,
-cue: “Commit the defender, then release!”,
-steps: [“A1 drives at the defender”, “A2 makes overlapping run wide”, “Defender is drawn to A1”, “A1 releases pass to A2”, “A2 shoots first time”],
-},
-{
-id: 7,
-name: “Crossing & Finishing”,
-pillar: “Finishing”,
-pillarColor: “#EF4444”,
-duration: “15 min”,
-players: “Groups of 4”,
-focus: “Delivery and attacking the box”,
-cue: “Cross early — striker, attack the near post!”,
-steps: [“Winger drives from cone down the flank”, “Striker makes near post run”, “CM makes far post / penalty spot run”, “Winger delivers low driven cross”, “Striker attacks the cross”],
-},
-{
-id: 8,
-name: “Shadow Defending”,
-pillar: “Defending”,
-pillarColor: “#F97316”,
-duration: “10 min”,
-players: “Pairs”,
-focus: “Positioning & patience”,
-cue: “Stay goal-side — bend your knees — be patient!”,
-steps: [“Attacker moves freely in the area”, “Defender tracks — stays between attacker and goal”, “Attacker changes direction”, “Defender adjusts quickly”, “Coach calls GO — defender wins the ball”],
-},
-{
-id: 9,
-name: “3v2 Counter Attack”,
-pillar: “Finishing”,
-pillarColor: “#EF4444”,
-duration: “15 min”,
-players: “Groups of 5”,
-focus: “Quick attacking transitions”,
-cue: “Find the free player — attack the space!”,
-steps: [“3 attackers launch from halfway”, “A1 carries ball forward”, “Defenders hold their shape”, “A1 plays wide to create 2v1”, “Wide attacker shoots or crosses”],
-},
-{
-id: 10,
-name: “Switch of Play”,
-pillar: “Passing”,
-pillarColor: “#3B82F6”,
-duration: “12 min”,
-players: “Groups of 6+”,
-focus: “Vision, weight of pass & width”,
-cue: “Play where they are NOT!”,
-steps: [“Ball starts on congested right side”, “CM receives under pressure”, “CM pivots and looks left”, “CM switches ball to free left winger”, “Left winger attacks space immediately”],
-},
-];
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="U10 Drills"/>
+<meta name="theme-color" content="#0d2416"/>
+<title>U10 Soccer Drills</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --green:#22c55e;--dark-green:#14532d;--bg:#0a1a0f;--surface:rgba(0,0,0,0.45);
+    --text:rgba(255,255,255,0.9);--muted:rgba(255,255,255,0.45);
+    --blue:#3b82f6;--red:#ef4444;--amber:#f59e0b;--orange:#f97316;
+    --safe-top:env(safe-area-inset-top,0px);
+    --safe-bot:env(safe-area-inset-bottom,0px);
+  }
+  html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+    font-family:'Courier New',monospace;overscroll-behavior:none}
+  #app{display:flex;flex-direction:column;height:100%;height:100dvh}
 
-// ── Animation data for each drill ─────────────────────────────────────────────
-function getDrillAnimation(id) {
-switch (id) {
-case 1: // Triangle Passing
-return {
-fieldType: “mini”,
-keyframes: [
-{
-t: 0,
-players: [
-{ id: “A”, x: 50, y: 75, color: “#3B82F6”, label: “A” },
-{ id: “B”, x: 20, y: 25, color: “#3B82F6”, label: “B” },
-{ id: “C”, x: 80, y: 25, color: “#3B82F6”, label: “C” },
-],
-ball: { x: 50, y: 75 },
-trails: [],
-},
-{
-t: 0.25,
-players: [
-{ id: “A”, x: 50, y: 75, color: “#3B82F6”, label: “A” },
-{ id: “B”, x: 20, y: 25, color: “#3B82F6”, label: “B” },
-{ id: “C”, x: 80, y: 25, color: “#3B82F6”, label: “C” },
-],
-ball: { x: 20, y: 25 },
-trails: [{ x1: 50, y1: 75, x2: 20, y2: 25 }],
-},
-{
-t: 0.42,
-players: [
-{ id: “A”, x: 20, y: 25, color: “#22C55E”, label: “A” },
-{ id: “B”, x: 20, y: 25, color: “#3B82F6”, label: “B” },
-{ id: “C”, x: 80, y: 25, color: “#3B82F6”, label: “C” },
-],
-ball: { x: 20, y: 25 },
-trails: [],
-},
-{
-t: 0.58,
-players: [
-{ id: “A”, x: 20, y: 25, color: “#22C55E”, label: “A” },
-{ id: “B”, x: 20, y: 25, color: “#3B82F6”, label: “B” },
-{ id: “C”, x: 80, y: 25, color: “#3B82F6”, label: “C” },
-],
-ball: { x: 80, y: 25 },
-trails: [{ x1: 20, y1: 25, x2: 80, y2: 25 }],
-},
-{
-t: 0.75,
-players: [
-{ id: “A”, x: 20, y: 25, color: “#22C55E”, label: “A” },
-{ id: “B”, x: 80, y: 25, color: “#22C55E”, label: “B” },
-{ id: “C”, x: 80, y: 25, color: “#3B82F6”, label: “C” },
-],
-ball: { x: 80, y: 25 },
-trails: [],
-},
-{
-t: 0.88,
-players: [
-{ id: “A”, x: 20, y: 25, color: “#22C55E”, label: “A” },
-{ id: “B”, x: 80, y: 25, color: “#22C55E”, label: “B” },
-{ id: “C”, x: 80, y: 25, color: “#3B82F6”, label: “C” },
-],
-ball: { x: 50, y: 75 },
-trails: [{ x1: 80, y1: 25, x2: 50, y2: 75 }],
-},
-{
-t: 1,
-players: [
-{ id: “A”, x: 20, y: 25, color: “#22C55E”, label: “A” },
-{ id: “B”, x: 80, y: 25, color: “#22C55E”, label: “B” },
-{ id: “C”, x: 50, y: 75, color: “#22C55E”, label: “C” },
-],
-ball: { x: 50, y: 75 },
-trails: [],
-},
-],
-staticElements: [
-{ type: “cone”, x: 50, y: 75 },
-{ type: “cone”, x: 20, y: 25 },
-{ type: “cone”, x: 80, y: 25 },
-{ type: “dashed-line”, x1: 50, y1: 75, x2: 20, y2: 25 },
-{ type: “dashed-line”, x1: 20, y1: 25, x2: 80, y2: 25 },
-{ type: “dashed-line”, x1: 80, y1: 25, x2: 50, y2: 75 },
-],
-};
-
-```
-case 2: // Cone Slalom
-  return {
-    fieldType: "mini",
-    keyframes: (() => {
-      const coneXs = [15, 30, 45, 60, 75, 88];
-      const coneY = 50;
-      const frames = [];
-      const pts = [
-        { x: 5, y: 50 },
-        { x: 15, y: 30 }, { x: 30, y: 70 }, { x: 45, y: 30 },
-        { x: 60, y: 70 }, { x: 75, y: 30 }, { x: 88, y: 70 },
-        { x: 95, y: 50 },
-      ];
-      pts.forEach((p, i) => {
-        frames.push({
-          t: i / (pts.length - 1),
-          players: [{ id: "P", x: p.x, y: p.y, color: "#3B82F6", label: "P" }],
-          ball: { x: p.x + 2, y: p.y + 2 },
-          trails: i > 0 ? [{ x1: pts[i-1].x, y1: pts[i-1].y, x2: p.x, y2: p.y }] : [],
-        });
-      });
-      return frames;
-    })(),
-    staticElements: [
-      { type: "cone", x: 15, y: 50 },
-      { type: "cone", x: 30, y: 50 },
-      { type: "cone", x: 45, y: 50 },
-      { type: "cone", x: 60, y: 50 },
-      { type: "cone", x: 75, y: 50 },
-      { type: "cone", x: 88, y: 50 },
-    ],
-  };
-
-case 3: // 1v1 Shooting
-  return {
-    fieldType: "half",
-    keyframes: [
-      { t: 0, players: [
-        { id: "A", x: 50, y: 88, color: "#3B82F6", label: "A" },
-        { id: "D", x: 50, y: 55, color: "#EF4444", label: "D" },
-        { id: "GK", x: 50, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 50, y: 88 }, trails: [] },
-      { t: 0.3, players: [
-        { id: "A", x: 50, y: 68, color: "#3B82F6", label: "A" },
-        { id: "D", x: 50, y: 55, color: "#EF4444", label: "D" },
-        { id: "GK", x: 50, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 50, y: 68 }, trails: [] },
-      { t: 0.55, players: [
-        { id: "A", x: 38, y: 58, color: "#3B82F6", label: "A" },
-        { id: "D", x: 52, y: 52, color: "#EF4444", label: "D" },
-        { id: "GK", x: 52, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 38, y: 58 }, trails: [] },
-      { t: 0.75, players: [
-        { id: "A", x: 38, y: 42, color: "#3B82F6", label: "A" },
-        { id: "D", x: 52, y: 52, color: "#EF4444", label: "D" },
-        { id: "GK", x: 44, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 38, y: 42 }, trails: [] },
-      { t: 1, players: [
-        { id: "A", x: 38, y: 42, color: "#3B82F6", label: "A" },
-        { id: "D", x: 52, y: 52, color: "#EF4444", label: "D" },
-        { id: "GK", x: 44, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 38, y: 8 }, trails: [{ x1: 38, y1: 42, x2: 38, y2: 8, color: "#FBBF24" }] },
-    ],
-    staticElements: [
-      { type: "goal", x: 50, y: 5 },
-      { type: "cone", x: 50, y: 92 },
-    ],
-  };
-
-case 4: // 4v2 Rondo
-  return {
-    fieldType: "mini",
-    keyframes: [
-      { t: 0, players: [
-        { id: "O1", x: 15, y: 20, color: "#3B82F6", label: "O" },
-        { id: "O2", x: 85, y: 20, color: "#3B82F6", label: "O" },
-        { id: "O3", x: 85, y: 80, color: "#3B82F6", label: "O" },
-        { id: "O4", x: 15, y: 80, color: "#3B82F6", label: "O" },
-        { id: "D1", x: 38, y: 45, color: "#EF4444", label: "D" },
-        { id: "D2", x: 58, y: 55, color: "#EF4444", label: "D" },
-      ], ball: { x: 15, y: 20 }, trails: [] },
-      { t: 0.2, players: [
-        { id: "O1", x: 15, y: 20, color: "#3B82F6", label: "O" },
-        { id: "O2", x: 85, y: 20, color: "#3B82F6", label: "O" },
-        { id: "O3", x: 85, y: 80, color: "#3B82F6", label: "O" },
-        { id: "O4", x: 15, y: 80, color: "#3B82F6", label: "O" },
-        { id: "D1", x: 48, y: 25, color: "#EF4444", label: "D" },
-        { id: "D2", x: 58, y: 55, color: "#EF4444", label: "D" },
-      ], ball: { x: 85, y: 20 }, trails: [{ x1: 15, y1: 20, x2: 85, y2: 20 }] },
-      { t: 0.4, players: [
-        { id: "O1", x: 15, y: 20, color: "#3B82F6", label: "O" },
-        { id: "O2", x: 85, y: 20, color: "#3B82F6", label: "O" },
-        { id: "O3", x: 85, y: 80, color: "#3B82F6", label: "O" },
-        { id: "O4", x: 15, y: 80, color: "#3B82F6", label: "O" },
-        { id: "D1", x: 72, y: 42, color: "#EF4444", label: "D" },
-        { id: "D2", x: 68, y: 62, color: "#EF4444", label: "D" },
-      ], ball: { x: 85, y: 80 }, trails: [{ x1: 85, y1: 20, x2: 85, y2: 80 }] },
-      { t: 0.6, players: [
-        { id: "O1", x: 15, y: 20, color: "#3B82F6", label: "O" },
-        { id: "O2", x: 85, y: 20, color: "#3B82F6", label: "O" },
-        { id: "O3", x: 85, y: 80, color: "#3B82F6", label: "O" },
-        { id: "O4", x: 15, y: 80, color: "#3B82F6", label: "O" },
-        { id: "D1", x: 52, y: 72, color: "#EF4444", label: "D" },
-        { id: "D2", x: 38, y: 65, color: "#EF4444", label: "D" },
-      ], ball: { x: 15, y: 80 }, trails: [{ x1: 85, y1: 80, x2: 15, y2: 80 }] },
-      { t: 0.8, players: [
-        { id: "O1", x: 15, y: 20, color: "#3B82F6", label: "O" },
-        { id: "O2", x: 85, y: 20, color: "#3B82F6", label: "O" },
-        { id: "O3", x: 85, y: 80, color: "#3B82F6", label: "O" },
-        { id: "O4", x: 15, y: 80, color: "#3B82F6", label: "O" },
-        { id: "D1", x: 28, y: 48, color: "#EF4444", label: "D" },
-        { id: "D2", x: 38, y: 38, color: "#EF4444", label: "D" },
-      ], ball: { x: 15, y: 20 }, trails: [{ x1: 15, y1: 80, x2: 15, y2: 20 }] },
-      { t: 1, players: [
-        { id: "O1", x: 15, y: 20, color: "#3B82F6", label: "O" },
-        { id: "O2", x: 85, y: 20, color: "#3B82F6", label: "O" },
-        { id: "O3", x: 85, y: 80, color: "#3B82F6", label: "O" },
-        { id: "O4", x: 15, y: 80, color: "#3B82F6", label: "O" },
-        { id: "D1", x: 38, y: 45, color: "#EF4444", label: "D" },
-        { id: "D2", x: 58, y: 55, color: "#EF4444", label: "D" },
-      ], ball: { x: 85, y: 20 }, trails: [{ x1: 15, y1: 20, x2: 85, y2: 20 }] },
-    ],
-    staticElements: [
-      { type: "box", x: 15, y: 20, w: 70, h: 60 },
-    ],
-  };
-
-case 5: // Gate Dribbling
-  return {
-    fieldType: "mini",
-    keyframes: (() => {
-      const gates = [{ x: 22, y: 30 }, { x: 55, y: 20 }, { x: 78, y: 40 }, { x: 35, y: 65 }, { x: 65, y: 72 }, { x: 82, y: 58 }];
-      const path = [{ x: 8, y: 85 }, ...gates, { x: 8, y: 85 }];
-      return path.map((p, i) => ({
-        t: i / (path.length - 1),
-        players: [{ id: "P", x: p.x, y: p.y, color: "#22C55E", label: "P" }],
-        ball: { x: p.x + 2, y: p.y },
-        trails: i > 0 ? [{ x1: path[i-1].x, y1: path[i-1].y, x2: p.x, y2: p.y, color: "#86EFAC" }] : [],
-      }));
-    })(),
-    staticElements: [
-      { type: "gate", x: 22, y: 30 }, { type: "gate", x: 55, y: 20 },
-      { type: "gate", x: 78, y: 40 }, { type: "gate", x: 35, y: 65 },
-      { type: "gate", x: 65, y: 72 }, { type: "gate", x: 82, y: 58 },
-    ],
-  };
-
-case 6: // 2v1 to Goal
-  return {
-    fieldType: "half",
-    keyframes: [
-      { t: 0, players: [
-        { id: "A1", x: 38, y: 85, color: "#3B82F6", label: "A1" },
-        { id: "A2", x: 62, y: 85, color: "#3B82F6", label: "A2" },
-        { id: "D", x: 50, y: 52, color: "#EF4444", label: "D" },
-        { id: "GK", x: 50, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 38, y: 85 }, trails: [] },
-      { t: 0.25, players: [
-        { id: "A1", x: 38, y: 62, color: "#3B82F6", label: "A1" },
-        { id: "A2", x: 75, y: 60, color: "#3B82F6", label: "A2" },
-        { id: "D", x: 44, y: 52, color: "#EF4444", label: "D" },
-        { id: "GK", x: 50, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 38, y: 62 }, trails: [] },
-      { t: 0.5, players: [
-        { id: "A1", x: 38, y: 45, color: "#3B82F6", label: "A1" },
-        { id: "A2", x: 78, y: 40, color: "#3B82F6", label: "A2" },
-        { id: "D", x: 40, y: 46, color: "#EF4444", label: "D" },
-        { id: "GK", x: 50, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 38, y: 45 }, trails: [] },
-      { t: 0.7, players: [
-        { id: "A1", x: 38, y: 45, color: "#3B82F6", label: "A1" },
-        { id: "A2", x: 78, y: 40, color: "#3B82F6", label: "A2" },
-        { id: "D", x: 40, y: 46, color: "#EF4444", label: "D" },
-        { id: "GK", x: 62, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 78, y: 40 }, trails: [{ x1: 38, y1: 45, x2: 78, y2: 40 }] },
-      { t: 1, players: [
-        { id: "A1", x: 38, y: 45, color: "#3B82F6", label: "A1" },
-        { id: "A2", x: 78, y: 40, color: "#3B82F6", label: "A2" },
-        { id: "D", x: 40, y: 46, color: "#EF4444", label: "D" },
-        { id: "GK", x: 62, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 68, y: 8 }, trails: [{ x1: 78, y1: 40, x2: 68, y2: 8, color: "#FBBF24" }] },
-    ],
-    staticElements: [{ type: "goal", x: 50, y: 5 }, { type: "cone", x: 38, y: 90 }, { type: "cone", x: 62, y: 90 }],
-  };
-
-case 7: // Crossing & Finishing
-  return {
-    fieldType: "half",
-    keyframes: [
-      { t: 0, players: [
-        { id: "W", x: 88, y: 65, color: "#22C55E", label: "W" },
-        { id: "S", x: 42, y: 42, color: "#3B82F6", label: "S" },
-        { id: "CM", x: 60, y: 50, color: "#3B82F6", label: "CM" },
-        { id: "GK", x: 50, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 88, y: 65 }, trails: [] },
-      { t: 0.3, players: [
-        { id: "W", x: 88, y: 38, color: "#22C55E", label: "W" },
-        { id: "S", x: 38, y: 30, color: "#3B82F6", label: "S" },
-        { id: "CM", x: 55, y: 35, color: "#3B82F6", label: "CM" },
-        { id: "GK", x: 50, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 88, y: 38 }, trails: [] },
-      { t: 0.6, players: [
-        { id: "W", x: 88, y: 30, color: "#22C55E", label: "W" },
-        { id: "S", x: 35, y: 22, color: "#3B82F6", label: "S" },
-        { id: "CM", x: 52, y: 26, color: "#3B82F6", label: "CM" },
-        { id: "GK", x: 44, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 88, y: 30 }, trails: [] },
-      { t: 0.8, players: [
-        { id: "W", x: 88, y: 30, color: "#22C55E", label: "W" },
-        { id: "S", x: 35, y: 22, color: "#3B82F6", label: "S" },
-        { id: "CM", x: 52, y: 26, color: "#3B82F6", label: "CM" },
-        { id: "GK", x: 44, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 37, y: 22 }, trails: [{ x1: 88, y1: 30, x2: 37, y2: 22 }] },
-      { t: 1, players: [
-        { id: "W", x: 88, y: 30, color: "#22C55E", label: "W" },
-        { id: "S", x: 35, y: 22, color: "#3B82F6", label: "S" },
-        { id: "CM", x: 52, y: 26, color: "#3B82F6", label: "CM" },
-        { id: "GK", x: 44, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 37, y: 8 }, trails: [{ x1: 37, y1: 22, x2: 37, y2: 8, color: "#FBBF24" }] },
-    ],
-    staticElements: [{ type: "goal", x: 50, y: 5 }, { type: "cone", x: 88, y: 72 }],
-  };
-
-case 8: // Shadow Defending
-  return {
-    fieldType: "mini",
-    keyframes: [
-      { t: 0, players: [
-        { id: "A", x: 30, y: 40, color: "#3B82F6", label: "A" },
-        { id: "D", x: 40, y: 55, color: "#EF4444", label: "D" },
-      ], ball: null, trails: [],
-        label: { text: "Defender stays goal-side", x: 50, y: 88 } },
-      { t: 0.2, players: [
-        { id: "A", x: 55, y: 30, color: "#3B82F6", label: "A" },
-        { id: "D", x: 62, y: 45, color: "#EF4444", label: "D" },
-      ], ball: null, trails: [] },
-      { t: 0.4, players: [
-        { id: "A", x: 70, y: 55, color: "#3B82F6", label: "A" },
-        { id: "D", x: 72, y: 65, color: "#EF4444", label: "D" },
-      ], ball: null, trails: [] },
-      { t: 0.6, players: [
-        { id: "A", x: 45, y: 65, color: "#3B82F6", label: "A" },
-        { id: "D", x: 50, y: 75, color: "#EF4444", label: "D" },
-      ], ball: null, trails: [] },
-      { t: 0.8, players: [
-        { id: "A", x: 25, y: 50, color: "#3B82F6", label: "A" },
-        { id: "D", x: 32, y: 62, color: "#EF4444", label: "D" },
-      ], ball: null, trails: [] },
-      { t: 1, players: [
-        { id: "A", x: 30, y: 40, color: "#3B82F6", label: "A" },
-        { id: "D", x: 38, y: 52, color: "#EF4444", label: "D" },
-      ], ball: null, trails: [] },
-    ],
-    staticElements: [
-      { type: "box", x: 10, y: 10, w: 80, h: 80 },
-      { type: "label-bottom", text: "GOAL this side ↓" },
-    ],
-  };
-
-case 9: // 3v2 Counter Attack
-  return {
-    fieldType: "half",
-    keyframes: [
-      { t: 0, players: [
-        { id: "A1", x: 50, y: 92, color: "#3B82F6", label: "A1" },
-        { id: "A2", x: 28, y: 88, color: "#3B82F6", label: "A2" },
-        { id: "A3", x: 72, y: 88, color: "#3B82F6", label: "A3" },
-        { id: "D1", x: 35, y: 52, color: "#EF4444", label: "D1" },
-        { id: "D2", x: 65, y: 52, color: "#EF4444", label: "D2" },
-        { id: "GK", x: 50, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 50, y: 92 }, trails: [] },
-      { t: 0.3, players: [
-        { id: "A1", x: 50, y: 68, color: "#3B82F6", label: "A1" },
-        { id: "A2", x: 18, y: 62, color: "#3B82F6", label: "A2" },
-        { id: "A3", x: 78, y: 62, color: "#3B82F6", label: "A3" },
-        { id: "D1", x: 35, y: 52, color: "#EF4444", label: "D1" },
-        { id: "D2", x: 65, y: 52, color: "#EF4444", label: "D2" },
-        { id: "GK", x: 50, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 50, y: 68 }, trails: [] },
-      { t: 0.55, players: [
-        { id: "A1", x: 50, y: 52, color: "#3B82F6", label: "A1" },
-        { id: "A2", x: 18, y: 45, color: "#3B82F6", label: "A2" },
-        { id: "A3", x: 78, y: 45, color: "#3B82F6", label: "A3" },
-        { id: "D1", x: 42, y: 48, color: "#EF4444", label: "D1" },
-        { id: "D2", x: 60, y: 48, color: "#EF4444", label: "D2" },
-        { id: "GK", x: 50, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 50, y: 52 }, trails: [] },
-      { t: 0.72, players: [
-        { id: "A1", x: 50, y: 52, color: "#3B82F6", label: "A1" },
-        { id: "A2", x: 18, y: 38, color: "#3B82F6", label: "A2" },
-        { id: "A3", x: 78, y: 38, color: "#3B82F6", label: "A3" },
-        { id: "D1", x: 42, y: 48, color: "#EF4444", label: "D1" },
-        { id: "D2", x: 60, y: 48, color: "#EF4444", label: "D2" },
-        { id: "GK", x: 35, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 18, y: 38 }, trails: [{ x1: 50, y1: 52, x2: 18, y2: 38 }] },
-      { t: 1, players: [
-        { id: "A1", x: 50, y: 52, color: "#3B82F6", label: "A1" },
-        { id: "A2", x: 18, y: 30, color: "#3B82F6", label: "A2" },
-        { id: "A3", x: 78, y: 38, color: "#3B82F6", label: "A3" },
-        { id: "D1", x: 42, y: 48, color: "#EF4444", label: "D1" },
-        { id: "D2", x: 60, y: 48, color: "#EF4444", label: "D2" },
-        { id: "GK", x: 35, y: 15, color: "#EAB308", label: "GK" },
-      ], ball: { x: 30, y: 8 }, trails: [{ x1: 18, y1: 30, x2: 30, y2: 8, color: "#FBBF24" }] },
-    ],
-    staticElements: [{ type: "goal", x: 50, y: 5 }],
-  };
-
-case 10: // Switch of Play
-  return {
-    fieldType: "mini",
-    keyframes: [
-      { t: 0, players: [
-        { id: "LW", x: 12, y: 35, color: "#3B82F6", label: "LW" },
-        { id: "CM", x: 50, y: 50, color: "#3B82F6", label: "CM" },
-        { id: "RW", x: 82, y: 35, color: "#22C55E", label: "RW" },
-        { id: "D1", x: 68, y: 35, color: "#EF4444", label: "D" },
-        { id: "D2", x: 72, y: 52, color: "#EF4444", label: "D" },
-      ], ball: { x: 82, y: 35 }, trails: [] },
-      { t: 0.25, players: [
-        { id: "LW", x: 12, y: 35, color: "#3B82F6", label: "LW" },
-        { id: "CM", x: 50, y: 50, color: "#3B82F6", label: "CM" },
-        { id: "RW", x: 82, y: 35, color: "#22C55E", label: "RW" },
-        { id: "D1", x: 68, y: 35, color: "#EF4444", label: "D" },
-        { id: "D2", x: 72, y: 52, color: "#EF4444", label: "D" },
-      ], ball: { x: 50, y: 50 }, trails: [{ x1: 82, y1: 35, x2: 50, y2: 50 }] },
-      { t: 0.5, players: [
-        { id: "LW", x: 12, y: 35, color: "#3B82F6", label: "LW" },
-        { id: "CM", x: 50, y: 50, color: "#3B82F6", label: "CM" },
-        { id: "RW", x: 75, y: 40, color: "#22C55E", label: "RW" },
-        { id: "D1", x: 62, y: 42, color: "#EF4444", label: "D" },
-        { id: "D2", x: 68, y: 55, color: "#EF4444", label: "D" },
-      ], ball: { x: 50, y: 50 }, trails: [] },
-      { t: 0.72, players: [
-        { id: "LW", x: 12, y: 35, color: "#22C55E", label: "LW" },
-        { id: "CM", x: 50, y: 50, color: "#3B82F6", label: "CM" },
-        { id: "RW", x: 70, y: 42, color: "#22C55E", label: "RW" },
-        { id: "D1", x: 58, y: 42, color: "#EF4444", label: "D" },
-        { id: "D2", x: 65, y: 55, color: "#EF4444", label: "D" },
-      ], ball: { x: 12, y: 35 }, trails: [{ x1: 50, y1: 50, x2: 12, y2: 35, color: "#FBBF24" }] },
-      { t: 1, players: [
-        { id: "LW", x: 12, y: 22, color: "#22C55E", label: "LW" },
-        { id: "CM", x: 42, y: 40, color: "#3B82F6", label: "CM" },
-        { id: "RW", x: 65, y: 42, color: "#22C55E", label: "RW" },
-        { id: "D1", x: 28, y: 32, color: "#EF4444", label: "D" },
-        { id: "D2", x: 55, y: 50, color: "#EF4444", label: "D" },
-      ], ball: { x: 12, y: 22 }, trails: [] },
-    ],
-    staticElements: [
-      { type: "vline", x: 50 },
-      { type: "label", text: "Congested", x: 72, y: 88 },
-      { type: "label", text: "Space!", x: 18, y: 88 },
-    ],
-  };
-
-default: return null;
-```
-
+/* ── HEADER ── */
+#header{
+background:linear-gradient(135deg,#0d2416,#14532d);
+border-bottom:2px solid var(–green);
+padding:calc(var(–safe-top) + 10px) 16px 10px;
+flex-shrink:0;
 }
+#header-inner{display:flex;align-items:center;gap:12px}
+#header-icon{font-size:26px;line-height:1}
+#header-text{}
+#header-title{font-size:15px;font-weight:bold;letter-spacing:2px;color:#86efac;line-height:1}
+#header-sub{font-size:9px;color:rgba(134,239,172,0.55);letter-spacing:1.5px;margin-top:2px}
+#drill-badge{
+margin-left:auto;background:var(–green);color:#000;
+font-size:10px;font-weight:bold;padding:4px 10px;border-radius:99px;letter-spacing:1px;
+white-space:nowrap;flex-shrink:0;
 }
 
-// ── Interpolation helper ───────────────────────────────────────────────────────
-function lerp(a, b, t) { return a + (b - a) * t; }
+/* ── MAIN SCROLL ── */
+#main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+#main-inner{padding:14px 14px 8px;display:flex;flex-direction:column;gap:14px}
 
-function interpolateFrame(keyframes, progress) {
-if (!keyframes || keyframes.length === 0) return null;
-if (progress <= 0) return keyframes[0];
-if (progress >= 1) return keyframes[keyframes.length - 1];
-
-let lo = 0, hi = keyframes.length - 1;
-for (let i = 0; i < keyframes.length - 1; i++) {
-if (progress >= keyframes[i].t && progress <= keyframes[i + 1].t) {
-lo = i; hi = i + 1; break;
+/* ── DRILL HEADER ── */
+#drill-header{
+background:var(–surface);border:1px solid rgba(34,197,94,0.2);
+border-radius:14px;padding:14px;
 }
+#drill-title-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+#drill-number{
+width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
+justify-content:center;font-size:13px;font-weight:bold;flex-shrink:0;color:#000;
 }
-const span = keyframes[hi].t - keyframes[lo].t;
-const localT = span === 0 ? 0 : (progress - keyframes[lo].t) / span;
-// ease in-out
-const eased = localT < 0.5 ? 2 * localT * localT : -1 + (4 - 2 * localT) * localT;
-
-const a = keyframes[lo], b = keyframes[hi];
-const players = a.players.map((pa) => {
-const pb2 = b.players.find(p => p.id === pa.id) || pa;
-return { …pa, x: lerp(pa.x, pb2.x, eased), y: lerp(pa.y, pb2.y, eased) };
-});
-
-let ball = null;
-if (a.ball && b.ball) {
-ball = { x: lerp(a.ball.x, b.ball.x, eased), y: lerp(a.ball.y, b.ball.y, eased) };
-} else if (a.ball && eased < 0.5) ball = a.ball;
-else if (b.ball) ball = b.ball;
-
-const trails = eased > 0.3 ? (b.trails || []) : (a.trails || []);
-return { players, ball, trails };
+#drill-name{font-size:17px;font-weight:bold;color:#86efac;letter-spacing:.5px}
+#drill-meta{display:flex;gap:8px;flex-wrap:wrap}
+.meta-tag{
+font-size:10px;color:var(–muted);background:rgba(255,255,255,0.07);
+padding:3px 10px;border-radius:99px;
 }
-
-// ── Field SVG ─────────────────────────────────────────────────────────────────
-function Field({ type, children, staticElements }) {
-const W = 320, H = type === “half” ? 320 : 240;
-const toX = (pct) => (pct / 100) * W;
-const toY = (pct) => (pct / 100) * H;
-
-return (
-<svg width={W} height={H} style={{ borderRadius: 8, display: “block”, margin: “0 auto” }}>
-{/* Grass */}
-<defs>
-<pattern id="grass" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-<rect width="20" height="20" fill="#166534" />
-<rect x="0" y="0" width="10" height="20" fill="#15803d" opacity="0.4" />
-</pattern>
-<filter id="glow">
-<feGaussianBlur stdDeviation="2" result="coloredBlur" />
-<feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
-</filter>
-</defs>
-<rect width={W} height={H} fill="url(#grass)" rx="8" />
-
-```
-  {/* Static elements */}
-  {(staticElements || []).map((el, i) => {
-    if (el.type === "cone") return (
-      <polygon key={i}
-        points={`${toX(el.x)},${toY(el.y) - 7} ${toX(el.x) - 5},${toY(el.y) + 5} ${toX(el.x) + 5},${toY(el.y) + 5}`}
-        fill="#F97316" stroke="#fff" strokeWidth="0.5" />
-    );
-    if (el.type === "gate") return (
-      <g key={i}>
-        <polygon points={`${toX(el.x) - 8},${toY(el.y) - 7} ${toX(el.x) - 13},${toY(el.y) + 5} ${toX(el.x) - 3},${toY(el.y) + 5}`} fill="#F97316" />
-        <polygon points={`${toX(el.x) + 8},${toY(el.y) - 7} ${toX(el.x) + 3},${toY(el.y) + 5} ${toX(el.x) + 13},${toY(el.y) + 5}`} fill="#F97316" />
-        <line x1={toX(el.x) - 8} y1={toY(el.y)} x2={toX(el.x) + 8} y2={toY(el.y)} stroke="#fff" strokeWidth="1" strokeDasharray="2,2" />
-      </g>
-    );
-    if (el.type === "goal") return (
-      <g key={i}>
-        <rect x={toX(el.x) - 38} y={toY(el.y) - 4} width={76} height={18} fill="none" stroke="#fff" strokeWidth="2.5" />
-        <rect x={toX(el.x) - 38} y={toY(el.y) - 4} width={76} height={18} fill="rgba(255,255,255,0.08)" />
-        <text x={toX(el.x)} y={toY(el.y) + 10} textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="8" fontWeight="bold">GOAL</text>
-      </g>
-    );
-    if (el.type === "box") return (
-      <rect key={i} x={toX(el.x)} y={toY(el.y)} width={toX(el.w)} height={toY(el.h)}
-        fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeDasharray="5,3" />
-    );
-    if (el.type === "vline") return (
-      <line key={i} x1={toX(el.x)} y1={0} x2={toX(el.x)} y2={H}
-        stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeDasharray="4,3" />
-    );
-    if (el.type === "label") return (
-      <text key={i} x={toX(el.x)} y={toY(el.y)} textAnchor="middle"
-        fill="rgba(255,255,255,0.5)" fontSize="9" fontStyle="italic">{el.text}</text>
-    );
-    if (el.type === "dashed-line") return (
-      <line key={i} x1={toX(el.x1)} y1={toY(el.y1)} x2={toX(el.x2)} y2={toY(el.y2)}
-        stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeDasharray="4,3" />
-    );
-    return null;
-  })}
-
-  {/* Field lines for half-field */}
-  {type === "half" && (
-    <>
-      <rect x={2} y={2} width={W-4} height={H-4} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" rx="4" />
-      <rect x={toX(25)} y={toY(0)} width={toX(50)} height={toY(22)} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.2" />
-    </>
-  )}
-  {type === "mini" && (
-    <rect x={4} y={4} width={W-8} height={H-8} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" rx="4" />
-  )}
-
-  {children}
-</svg>
-```
-
-);
+#drill-cue{
+margin-top:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);
+border-radius:10px;padding:8px 12px;
 }
+#cue-label{font-size:9px;color:var(–green);letter-spacing:1px;margin-bottom:3px}
+#cue-text{font-size:12px;color:#86efac;font-style:italic}
 
-// ── Animated Drill Canvas ─────────────────────────────────────────────────────
-function DrillCanvas({ drill, isPlaying, progress }) {
-const anim = getDrillAnimation(drill.id);
-if (!anim) return null;
-
-const W = 320, H = anim.fieldType === “half” ? 320 : 240;
-const toX = (pct) => (pct / 100) * W;
-const toY = (pct) => (pct / 100) * H;
-
-const frame = interpolateFrame(anim.keyframes, progress);
-if (!frame) return null;
-
-return (
-<Field type={anim.fieldType} staticElements={anim.staticElements}>
-{/* Pass trails */}
-{(frame.trails || []).map((tr, i) => {
-const dx = toX(tr.x2) - toX(tr.x1), dy = toY(tr.y2) - toY(tr.y1);
-const len = Math.sqrt(dx*dx+dy*dy);
-const ux = dx/len, uy = dy/len;
-const arrowX = toX(tr.x2) - ux*8, arrowY = toY(tr.y2) - uy*8;
-const angle = Math.atan2(dy, dx);
-const ax1 = arrowX - 8*Math.cos(angle-0.5), ay1 = arrowY - 8*Math.sin(angle-0.5);
-const ax2 = arrowX - 8*Math.cos(angle+0.5), ay2 = arrowY - 8*Math.sin(angle+0.5);
-return (
-<g key={i}>
-<line x1={toX(tr.x1)} y1={toY(tr.y1)} x2={toX(tr.x2)} y2={toY(tr.y2)}
-stroke={tr.color || “#FCD34D”} strokeWidth=“2.5” strokeLinecap=“round” opacity=“0.85” />
-<polygon points={`${toX(tr.x2)},${toY(tr.y2)} ${ax1},${ay1} ${ax2},${ay2}`}
-fill={tr.color || “#FCD34D”} opacity=“0.85” />
-</g>
-);
-})}
-
-```
-  {/* Players */}
-  {(frame.players || []).map((p) => (
-    <g key={p.id}>
-      <circle cx={toX(p.x)} cy={toY(p.y)} r={13} fill={p.color} stroke="white" strokeWidth="2"
-        style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }} />
-      <text x={toX(p.x)} y={toY(p.y) + 4} textAnchor="middle"
-        fill="white" fontSize="9" fontWeight="bold" fontFamily="monospace">{p.label}</text>
-    </g>
-  ))}
-
-  {/* Ball */}
-  {frame.ball && (
-    <g>
-      <circle cx={toX(frame.ball.x)} cy={toY(frame.ball.y)} r={6}
-        fill="white" stroke="#333" strokeWidth="1.5"
-        style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.6))" }} />
-      {/* Ball pattern */}
-      <circle cx={toX(frame.ball.x)} cy={toY(frame.ball.y)} r={3}
-        fill="#333" opacity="0.3" />
-    </g>
-  )}
-</Field>
-```
-
-);
+/* ── CANVAS ── */
+#canvas-wrap{
+background:var(–surface);border:1px solid rgba(34,197,94,0.2);
+border-radius:14px;padding:12px;
 }
+#field-canvas{display:block;margin:0 auto;border-radius:10px;
+touch-action:none;max-width:100%}
 
-// ── Legend ────────────────────────────────────────────────────────────────────
-function Legend() {
-return (
-<div style={{ display: “flex”, gap: 16, flexWrap: “wrap”, justifyContent: “center”, marginTop: 8 }}>
-{[
-{ color: “#3B82F6”, label: “Player” },
-{ color: “#EF4444”, label: “Defender” },
-{ color: “#22C55E”, label: “Wide / Free” },
-{ color: “#EAB308”, label: “Goalkeeper” },
-].map(({ color, label }) => (
-<div key={label} style={{ display: “flex”, alignItems: “center”, gap: 6 }}>
-<div style={{ width: 12, height: 12, borderRadius: “50%”, background: color, border: “1.5px solid rgba(255,255,255,0.4)” }} />
-<span style={{ fontSize: 11, color: “rgba(255,255,255,0.6)”, fontFamily: “monospace” }}>{label}</span>
-</div>
-))}
-<div style={{ display: “flex”, alignItems: “center”, gap: 6 }}>
-<div style={{ width: 20, height: 2, background: “#FCD34D”, borderRadius: 1 }} />
-<span style={{ fontSize: 11, color: “rgba(255,255,255,0.6)”, fontFamily: “monospace” }}>Pass / Move</span>
-</div>
-</div>
-);
+/* ── CONTROLS ── */
+#controls{display:flex;align-items:center;gap:10px;margin-top:10px;justify-content:center}
+.ctrl-btn{
+border:none;border-radius:10px;cursor:pointer;font-family:inherit;
+font-weight:bold;padding:10px 0;transition:opacity .15s;active:opacity:.7;
 }
+#btn-reset{background:rgba(255,255,255,0.1);color:var(–text);font-size:13px;width:72px}
+#btn-play{font-size:14px;width:110px;letter-spacing:1px}
+#btn-play.playing{background:rgba(239,68,68,0.2);border:1.5px solid var(–red);color:#fca5a5}
+#btn-play.paused{background:rgba(34,197,94,0.25);border:1.5px solid var(–green);color:#86efac}
+#progress-bar{margin-top:8px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden}
+#progress-fill{height:100%;background:linear-gradient(90deg,#22c55e,#86efac);border-radius:2px;width:0%;transition:width .05s linear}
 
-// ── Main App ──────────────────────────────────────────────────────────────────
-export default function SoccerDrills() {
-const [activeDrill, setActiveDrill] = useState(0);
-const [isPlaying, setIsPlaying] = useState(false);
-const [progress, setProgress] = useState(0);
-const [stepIndex, setStepIndex] = useState(0);
-const rafRef = useRef(null);
-const startRef = useRef(null);
-const pausedAtRef = useRef(0);
-const DURATION = 4000; // ms per loop
-
-const drill = DRILLS[activeDrill];
-
-const animate = useCallback((ts) => {
-if (!startRef.current) startRef.current = ts - pausedAtRef.current * DURATION;
-const elapsed = ts - startRef.current;
-const p = (elapsed % DURATION) / DURATION;
-setProgress(p);
-const steps = drill.steps || [];
-setStepIndex(Math.min(Math.floor(p * steps.length), steps.length - 1));
-rafRef.current = requestAnimationFrame(animate);
-}, [drill]);
-
-useEffect(() => {
-if (isPlaying) {
-rafRef.current = requestAnimationFrame(animate);
-} else {
-if (rafRef.current) cancelAnimationFrame(rafRef.current);
-pausedAtRef.current = progress;
+/* ── STEPS ── */
+#steps-card{
+background:var(–surface);border:1px solid rgba(34,197,94,0.15);
+border-radius:14px;padding:14px;
 }
-return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-}, [isPlaying, animate]);
+#steps-label{font-size:9px;color:var(–green);letter-spacing:1.5px;margin-bottom:12px}
+.step-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;transition:opacity .3s}
+.step-num{
+width:22px;height:22px;border-radius:50%;flex-shrink:0;
+display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;
+transition:all .3s;border:1.5px solid rgba(255,255,255,0.15);
+background:rgba(255,255,255,0.08);color:var(–muted);
+}
+.step-num.active{background:var(–green);border-color:#86efac;color:#000}
+.step-num.done{background:#166534;border-color:#166534;color:rgba(255,255,255,0.5)}
+.step-text{font-size:12px;color:var(–muted);padding-top:3px;line-height:1.4;transition:color .3s}
+.step-text.active{color:#86efac;font-weight:bold}
 
-// Reset on drill change
-useEffect(() => {
-setIsPlaying(false);
-setProgress(0);
-setStepIndex(0);
-startRef.current = null;
-pausedAtRef.current = 0;
-}, [activeDrill]);
+/* ── LEGEND ── */
+#legend{
+background:var(–surface);border:1px solid rgba(255,255,255,0.08);
+border-radius:14px;padding:12px 14px;
+}
+#legend-label{font-size:9px;color:var(–muted);letter-spacing:1.5px;margin-bottom:10px}
+#legend-items{display:flex;flex-wrap:wrap;gap:10px}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-dot{width:12px;height:12px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.3);flex-shrink:0}
+.legend-lbl{font-size:10px;color:var(–muted)}
+.legend-line{width:20px;height:2.5px;border-radius:1px;flex-shrink:0}
 
-const pillars = [“All”, “Dribbling”, “Passing”, “Finishing”, “Defending”];
-const [filterPillar, setFilterPillar] = useState(“All”);
-const filtered = DRILLS.filter(d => filterPillar === “All” || d.pillar === filterPillar);
+/* ── BOTTOM NAV ── */
+#bottom-nav{
+flex-shrink:0;
+background:linear-gradient(180deg,rgba(10,26,15,0.95),#0a1a0f);
+border-top:1px solid rgba(34,197,94,0.2);
+padding:10px 8px calc(var(–safe-bot) + 10px);
+}
+#filter-row{display:flex;gap:6px;justify-content:center;margin-bottom:10px;flex-wrap:wrap}
+.filter-btn{
+font-size:9px;padding:4px 10px;border-radius:99px;border:none;cursor:pointer;
+font-family:inherit;letter-spacing:.5px;font-weight:bold;transition:all .15s;
+}
+.filter-btn.active{background:var(–green);color:#000}
+.filter-btn.inactive{background:rgba(255,255,255,0.08);color:var(–muted)}
+#drill-dots{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
+.drill-dot{
+width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
+font-family:inherit;font-size:12px;font-weight:bold;transition:all .2s;
+display:flex;align-items:center;justify-content:center;
+}
+.drill-dot.active{color:#000;transform:scale(1.15);box-shadow:0 0 12px rgba(34,197,94,0.5)}
+.drill-dot.inactive{background:rgba(255,255,255,0.08);color:var(–muted)}
+.drill-dot.hidden{display:none}
 
-return (
-<div style={{
-minHeight: “100vh”,
-background: “linear-gradient(135deg, #0a1a0f 0%, #0d2416 40%, #0a1a0f 100%)”,
-fontFamily: “‘Courier New’, monospace”,
-color: “white”,
-padding: “0 0 40px”,
-}}>
-{/* Header */}
-<div style={{
-background: “linear-gradient(90deg, #14532d, #166534, #14532d)”,
-borderBottom: “2px solid #22c55e”,
-padding: “20px 24px”,
-display: “flex”,
-alignItems: “center”,
-gap: 16,
-}}>
-<div style={{ fontSize: 36 }}>⚽</div>
-<div>
-<div style={{ fontSize: 22, fontWeight: “bold”, letterSpacing: 2, color: “#86efac” }}>
-U10 DRILL ANIMATOR
-</div>
-<div style={{ fontSize: 11, color: “rgba(134,239,172,0.6)”, letterSpacing: 1 }}>
-8v8 SEASON COACHING PLAN — 10 INTERACTIVE DRILLS
-</div>
-</div>
+/* Swipe hint */
+#swipe-hint{text-align:center;font-size:9px;color:rgba(255,255,255,0.2);margin-top:6px;letter-spacing:1px}
+
+/* Install banner */
+#install-banner{
+display:none;position:fixed;top:0;left:0;right:0;z-index:999;
+background:#0d2416;border-bottom:1px solid var(–green);
+padding:12px 16px;font-size:11px;color:#86efac;
+align-items:center;gap:10px;
+}
+#install-banner.show{display:flex}
+#close-banner{background:none;border:none;color:var(–muted);font-size:16px;cursor:pointer;margin-left:auto}
+</style>
+
+</head>
+<body>
+<!-- Install hint for Safari -->
+<div id="install-banner">
+  <span>⚽</span>
+  <span>Tap <strong>Share → Add to Home Screen</strong> to install as an app</span>
+  <button id="close-banner" onclick="document.getElementById('install-banner').classList.remove('show')">✕</button>
 </div>
 
-```
-  <div style={{ display: "flex", gap: 0, height: "calc(100vh - 90px)", overflow: "hidden" }}>
-
-    {/* Sidebar */}
-    <div style={{
-      width: 220,
-      background: "rgba(0,0,0,0.4)",
-      borderRight: "1px solid rgba(34,197,94,0.2)",
-      overflowY: "auto",
-      flexShrink: 0,
-    }}>
-      {/* Filter */}
-      <div style={{ padding: "12px 10px 8px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", marginBottom: 8, letterSpacing: 1 }}>FILTER BY SKILL</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-          {pillars.map(p => (
-            <button key={p} onClick={() => setFilterPillar(p)} style={{
-              padding: "3px 8px", fontSize: 9, borderRadius: 99, cursor: "pointer", border: "none",
-              background: filterPillar === p ? "#22c55e" : "rgba(255,255,255,0.08)",
-              color: filterPillar === p ? "#000" : "rgba(255,255,255,0.6)",
-              fontWeight: filterPillar === p ? "bold" : "normal",
-              letterSpacing: 0.5,
-            }}>{p}</button>
-          ))}
-        </div>
+<div id="app">
+  <!-- Header -->
+  <div id="header">
+    <div id="header-inner">
+      <div id="header-icon">⚽</div>
+      <div id="header-text">
+        <div id="header-title">U10 DRILL TRAINER</div>
+        <div id="header-sub">8v8 · 10 ANIMATED DRILLS</div>
       </div>
-
-      {/* Drill list */}
-      {filtered.map((d) => {
-        const realIdx = DRILLS.findIndex(x => x.id === d.id);
-        const active = realIdx === activeDrill;
-        return (
-          <div key={d.id} onClick={() => setActiveDrill(realIdx)} style={{
-            padding: "10px 12px",
-            cursor: "pointer",
-            background: active ? "rgba(34,197,94,0.15)" : "transparent",
-            borderLeft: active ? "3px solid #22c55e" : "3px solid transparent",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
-            transition: "all 0.15s",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-              <div style={{
-                width: 20, height: 20, borderRadius: "50%",
-                background: d.pillarColor, display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 9, fontWeight: "bold", flexShrink: 0,
-              }}>{d.id}</div>
-              <div style={{ fontSize: 11, fontWeight: active ? "bold" : "normal", color: active ? "#86efac" : "rgba(255,255,255,0.75)", lineHeight: 1.2 }}>
-                {d.name}
-              </div>
-            </div>
-            <div style={{ fontSize: 9, color: d.pillarColor, marginLeft: 28, opacity: 0.85 }}>
-              {d.pillar} · {d.duration}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-
-    {/* Main panel */}
-    <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-
-      {/* Drill header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <div style={{ width: 28, height: 28, borderRadius: "50%", background: drill.pillarColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: "bold" }}>
-              {drill.id}
-            </div>
-            <h2 style={{ margin: 0, fontSize: 20, color: "#86efac", letterSpacing: 1 }}>{drill.name}</h2>
-          </div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            {[`⏱ ${drill.duration}`, `👥 ${drill.players}`, `🎯 ${drill.focus}`].map(tag => (
-              <span key={tag} style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", background: "rgba(255,255,255,0.07)", padding: "3px 10px", borderRadius: 99 }}>{tag}</span>
-            ))}
-          </div>
-        </div>
-        <div style={{
-          background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)",
-          borderRadius: 8, padding: "8px 14px", maxWidth: 260,
-        }}>
-          <div style={{ fontSize: 9, color: "#22c55e", letterSpacing: 1, marginBottom: 3 }}>COACH CUE</div>
-          <div style={{ fontSize: 12, color: "#86efac", fontStyle: "italic" }}>"{drill.cue}"</div>
-        </div>
-      </div>
-
-      {/* Animation area */}
-      <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-        <div style={{ flex: "0 0 auto" }}>
-          <div style={{
-            background: "rgba(0,0,0,0.3)",
-            border: "1px solid rgba(34,197,94,0.2)",
-            borderRadius: 12,
-            padding: 16,
-          }}>
-            <DrillCanvas drill={drill} isPlaying={isPlaying} progress={progress} />
-            <Legend />
-
-            {/* Controls */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, justifyContent: "center" }}>
-              <button onClick={() => { setProgress(0); startRef.current = null; pausedAtRef.current = 0; setIsPlaying(false); }} style={{
-                background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)",
-                color: "white", padding: "7px 14px", borderRadius: 8, cursor: "pointer", fontSize: 13,
-              }}>↺ Reset</button>
-
-              <button onClick={() => setIsPlaying(p => !p)} style={{
-                background: isPlaying ? "rgba(239,68,68,0.2)" : "rgba(34,197,94,0.25)",
-                border: `1px solid ${isPlaying ? "#ef4444" : "#22c55e"}`,
-                color: "white", padding: "7px 22px", borderRadius: 8, cursor: "pointer", fontSize: 14,
-                fontWeight: "bold", letterSpacing: 1,
-              }}>
-                {isPlaying ? "⏸ Pause" : "▶ Play"}
-              </button>
-            </div>
-
-            {/* Progress bar */}
-            <div style={{ marginTop: 12, height: 4, background: "rgba(255,255,255,0.1)", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{
-                height: "100%", width: `${progress * 100}%`,
-                background: "linear-gradient(90deg, #22c55e, #86efac)",
-                borderRadius: 2, transition: "width 0.05s linear",
-              }} />
-            </div>
-          </div>
-        </div>
-
-        {/* Steps + Info panel */}
-        <div style={{ flex: 1, minWidth: 200 }}>
-          {/* Step by step */}
-          <div style={{
-            background: "rgba(0,0,0,0.25)", border: "1px solid rgba(34,197,94,0.15)",
-            borderRadius: 12, padding: 16, marginBottom: 16,
-          }}>
-            <div style={{ fontSize: 10, color: "#22c55e", letterSpacing: 1, marginBottom: 12 }}>STEP BY STEP</div>
-            {drill.steps.map((step, i) => {
-              const isActive = i === stepIndex && isPlaying;
-              const isPast = i < stepIndex && isPlaying;
-              return (
-                <div key={i} style={{
-                  display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10,
-                  opacity: isPlaying ? (isPast ? 0.4 : isActive ? 1 : 0.5) : 1,
-                  transition: "opacity 0.3s",
-                }}>
-                  <div style={{
-                    width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
-                    background: isActive ? "#22c55e" : isPast ? "#166534" : "rgba(255,255,255,0.1)",
-                    border: `1.5px solid ${isActive ? "#86efac" : "rgba(255,255,255,0.15)"}`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 10, fontWeight: "bold",
-                    color: isActive ? "#000" : "rgba(255,255,255,0.6)",
-                    transition: "all 0.3s",
-                  }}>{i + 1}</div>
-                  <div style={{
-                    fontSize: 12, color: isActive ? "#86efac" : "rgba(255,255,255,0.65)",
-                    paddingTop: 3, lineHeight: 1.4, fontWeight: isActive ? "bold" : "normal",
-                    transition: "color 0.3s",
-                  }}>{step}</div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Navigation */}
-          <div style={{
-            background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 12, padding: 14,
-          }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 10 }}>NAVIGATE DRILLS</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {DRILLS.map((d, i) => (
-                <button key={d.id} onClick={() => setActiveDrill(i)} style={{
-                  width: 32, height: 32, borderRadius: "50%", cursor: "pointer", border: "none",
-                  background: i === activeDrill ? d.pillarColor : "rgba(255,255,255,0.08)",
-                  color: i === activeDrill ? "#000" : "rgba(255,255,255,0.6)",
-                  fontSize: 11, fontWeight: "bold",
-                }}>{d.id}</button>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button onClick={() => setActiveDrill(i => Math.max(0, i - 1))} disabled={activeDrill === 0} style={{
-                flex: 1, padding: "8px 0", borderRadius: 8, cursor: "pointer", border: "none",
-                background: activeDrill === 0 ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.1)",
-                color: activeDrill === 0 ? "rgba(255,255,255,0.2)" : "white", fontSize: 13,
-              }}>← Prev</button>
-              <button onClick={() => setActiveDrill(i => Math.min(DRILLS.length - 1, i + 1))} disabled={activeDrill === DRILLS.length - 1} style={{
-                flex: 1, padding: "8px 0", borderRadius: 8, cursor: "pointer", border: "none",
-                background: activeDrill === DRILLS.length - 1 ? "rgba(255,255,255,0.04)" : "rgba(34,197,94,0.2)",
-                color: activeDrill === DRILLS.length - 1 ? "rgba(255,255,255,0.2)" : "#86efac",
-                fontSize: 13, fontWeight: "bold",
-              }}>Next →</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div id="drill-badge">DRILL 1 OF 10</div>
     </div>
   </div>
+
+  <!-- Scrollable main -->
+
+  <div id="main">
+    <div id="main-inner">
+
+```
+  <!-- Drill info -->
+  <div id="drill-header">
+    <div id="drill-title-row">
+      <div id="drill-number">1</div>
+      <div id="drill-name">Triangle Passing</div>
+    </div>
+    <div id="drill-meta">
+      <span class="meta-tag" id="meta-dur">⏱ 12 min</span>
+      <span class="meta-tag" id="meta-players">👥 Groups of 3</span>
+      <span class="meta-tag" id="meta-focus">🎯 Passing</span>
+    </div>
+    <div id="drill-cue">
+      <div id="cue-label">COACH CUE</div>
+      <div id="cue-text">"Pass and move — never stand still!"</div>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div id="canvas-wrap">
+    <canvas id="field-canvas"></canvas>
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+    <div id="controls">
+      <button class="ctrl-btn" id="btn-reset">↺ Reset</button>
+      <button class="ctrl-btn" id="btn-play">▶ Play</button>
+    </div>
+  </div>
+
+  <!-- Steps -->
+  <div id="steps-card">
+    <div id="steps-label">STEP BY STEP</div>
+    <div id="steps-list"></div>
+  </div>
+
+  <!-- Legend -->
+  <div id="legend">
+    <div id="legend-label">LEGEND</div>
+    <div id="legend-items">
+      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div><span class="legend-lbl">Player</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div><span class="legend-lbl">Defender</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div><span class="legend-lbl">Wide/Free</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div><span class="legend-lbl">Goalkeeper</span></div>
+      <div class="legend-item"><div class="legend-line" style="background:#fbbf24"></div><span class="legend-lbl">Pass/Shot</span></div>
+    </div>
+  </div>
+
 </div>
 ```
 
-);
+  </div>
+
+  <!-- Bottom nav -->
+
+  <div id="bottom-nav">
+    <div id="filter-row">
+      <button class="filter-btn active" data-filter="All">All</button>
+      <button class="filter-btn inactive" data-filter="Dribbling">🟢 Dribble</button>
+      <button class="filter-btn inactive" data-filter="Passing">🔵 Passing</button>
+      <button class="filter-btn inactive" data-filter="Finishing">🔴 Finish</button>
+      <button class="filter-btn inactive" data-filter="Defending">🟠 Defend</button>
+    </div>
+    <div id="drill-dots"></div>
+    <div id="swipe-hint">← SWIPE FIELD TO CHANGE DRILL →</div>
+  </div>
+</div>
+
+<script>
+// ─── DRILL DATA ────────────────────────────────────────────────────────────────
+const DRILLS = [
+  {id:1,name:"Triangle Passing",pillar:"Passing",pillarColor:"#3b82f6",
+   duration:"12 min",players:"Groups of 3",focus:"Short passing & movement",
+   cue:"Pass and move — never stand still!",
+   steps:["A passes to B","A follows their pass to B's position","B passes to C","B follows to C's position","C passes back to A","C follows to A's position — cycle repeats"]},
+  {id:2,name:"Cone Slalom Dribbling",pillar:"Dribbling",pillarColor:"#22c55e",
+   duration:"12 min",players:"Full squad",focus:"Ball control at speed",
+   cue:"Head up — feel the ball at your feet!",
+   steps:["Player starts at the first cone","Weave through each cone using inside & outside of foot","Drive through the last cone","Sprint back around the outside","Rejoin the queue — challenge your best time!"]},
+  {id:3,name:"1v1 Shooting",pillar:"Finishing",pillarColor:"#ef4444",
+   duration:"15 min",players:"Groups of 4",focus:"Finishing under pressure",
+   cue:"Stay low, use feints, shoot early!",
+   steps:["Attacker starts at the cone","Drive at the defender with purpose","Use a feint to shift the defender","Break into open space","Shoot low to the corner — GK moves to cover"]},
+  {id:4,name:"4v2 Rondo",pillar:"Passing",pillarColor:"#3b82f6",
+   duration:"12 min",players:"Groups of 6",focus:"Keeping ball under pressure",
+   cue:"Move after every pass — create angles!",
+   steps:["Outside players keep possession in the square","Defenders close down the ball carrier","Ball moves quickly — one or two touches","Defenders try to intercept or force error","If defender wins it — swap with who lost it"]},
+  {id:5,name:"Gate Dribbling",pillar:"Dribbling",pillarColor:"#22c55e",
+   duration:"10 min",players:"Full squad",focus:"Ball control & direction changes",
+   cue:"Head up — find the next gate!",
+   steps:["Player dribbles freely in the area","Spot an open gate and drive toward it","Pass the ball fully through the gate to score","Change direction — find another gate fast","Count gates in 45 seconds — beat your score!"]},
+  {id:6,name:"2v1 to Goal",pillar:"Finishing",pillarColor:"#ef4444",
+   duration:"12 min",players:"Groups of 4",focus:"Combination play & overlaps",
+   cue:"Commit the defender, then release!",
+   steps:["A1 drives at the defender with the ball","A2 makes an overlapping run wide","Defender is drawn toward A1","A1 passes at the right moment to A2","A2 shoots first time — rotate after each go"]},
+  {id:7,name:"Crossing & Finishing",pillar:"Finishing",pillarColor:"#ef4444",
+   duration:"15 min",players:"Groups of 4",focus:"Delivery and attacking the box",
+   cue:"Cross early — striker, attack the near post!",
+   steps:["Winger starts from the cone on the flank","Striker makes a diagonal run to near post","Central mid runs to far post / penalty spot","Winger drives and delivers a low driven cross","Striker attacks the cross — CM cleans up"]},
+  {id:8,name:"Shadow Defending",pillar:"Defending",pillarColor:"#f97316",
+   duration:"10 min",players:"Pairs",focus:"Positioning & patience",
+   cue:"Stay goal-side — bend your knees — be patient!",
+   steps:["Attacker moves freely in the 15×15 area","Defender tracks — stays between attacker and goal","Attacker changes direction suddenly","Defender adjusts position quickly — stays tight","Coach calls GO — defender wins the ball cleanly"]},
+  {id:9,name:"3v2 Counter Attack",pillar:"Finishing",pillarColor:"#ef4444",
+   duration:"15 min",players:"Groups of 5",focus:"Quick attacking transitions",
+   cue:"Find the free player — attack the space!",
+   steps:["3 attackers launch from halfway at pace","A1 carries ball forward to engage defenders","Defenders hold their shape — don't both commit","A1 plays wide to create a 2v1 on one flank","Wide attacker shoots or cuts inside to finish"]},
+  {id:10,name:"Switch of Play",pillar:"Passing",pillarColor:"#3b82f6",
+   duration:"12 min",players:"Groups of 6+",focus:"Vision, weight of pass & width",
+   cue:"Play where they are NOT!",
+   steps:["Ball starts on the congested right side","CM receives and feels pressure from defenders","CM pivots and scans the opposite flank","CM plays a long switch to the free left winger","Left winger controls and attacks space immediately"]},
+];
+
+// ─── ANIMATION KEYFRAMES ──────────────────────────────────────────────────────
+// Positions are % of canvas width/height
+function getKeyframes(id) {
+  switch(id) {
+    case 1: return { // Triangle Passing
+      type:'mini',
+      static:[{t:'cone',x:50,y:78},{t:'cone',x:18,y:22},{t:'cone',x:82,y:22},
+              {t:'dline',x1:50,y1:78,x2:18,y2:22},{t:'dline',x1:18,y1:22,x2:82,y2:22},{t:'dline',x1:82,y1:22,x2:50,y2:78}],
+      kf:[
+        {p:0,  pl:[{id:'A',x:50,y:78,c:'#3b82f6',l:'A'},{id:'B',x:18,y:22,c:'#3b82f6',l:'B'},{id:'C',x:82,y:22,c:'#3b82f6',l:'C'}],ball:{x:50,y:78},trails:[]},
+        {p:.22, pl:[{id:'A',x:50,y:78,c:'#3b82f6',l:'A'},{id:'B',x:18,y:22,c:'#3b82f6',l:'B'},{id:'C',x:82,y:22,c:'#3b82f6',l:'C'}],ball:{x:18,y:22},trails:[{x1:50,y1:78,x2:18,y2:22}]},
+        {p:.38, pl:[{id:'A',x:18,y:22,c:'#22c55e',l:'A'},{id:'B',x:18,y:22,c:'#3b82f6',l:'B'},{id:'C',x:82,y:22,c:'#3b82f6',l:'C'}],ball:{x:18,y:22},trails:[]},
+        {p:.55, pl:[{id:'A',x:18,y:22,c:'#22c55e',l:'A'},{id:'B',x:18,y:22,c:'#3b82f6',l:'B'},{id:'C',x:82,y:22,c:'#3b82f6',l:'C'}],ball:{x:82,y:22},trails:[{x1:18,y1:22,x2:82,y2:22}]},
+        {p:.72, pl:[{id:'A',x:18,y:22,c:'#22c55e',l:'A'},{id:'B',x:82,y:22,c:'#22c55e',l:'B'},{id:'C',x:82,y:22,c:'#3b82f6',l:'C'}],ball:{x:82,y:22},trails:[]},
+        {p:.88, pl:[{id:'A',x:18,y:22,c:'#22c55e',l:'A'},{id:'B',x:82,y:22,c:'#22c55e',l:'B'},{id:'C',x:82,y:22,c:'#3b82f6',l:'C'}],ball:{x:50,y:78},trails:[{x1:82,y1:22,x2:50,y2:78}]},
+        {p:1,   pl:[{id:'A',x:18,y:22,c:'#22c55e',l:'A'},{id:'B',x:82,y:22,c:'#22c55e',l:'B'},{id:'C',x:50,y:78,c:'#22c55e',l:'C'}],ball:{x:50,y:78},trails:[]},
+      ]};
+    case 2: return { // Slalom
+      type:'mini',
+      static:[5,20,36,52,67,82].map(x=>({t:'cone',x,y:50})),
+      kf: (() => {
+        const px=[{x:3,y:50},{x:5,y:30},{x:20,y:70},{x:36,y:30},{x:52,y:70},{x:67,y:30},{x:82,y:70},{x:95,y:50}];
+        return px.map((p,i)=>({p:i/(px.length-1),pl:[{id:'P',x:p.x,y:p.y,c:'#22c55e',l:'P'}],
+          ball:{x:p.x+2,y:p.y},trails:i>0?[{x1:px[i-1].x,y1:px[i-1].y,x2:p.x,y2:p.y,c:'#86efac'}]:[]}));
+      })()};
+    case 3: return { // 1v1 Shooting
+      type:'half',
+      static:[{t:'goal',x:50,y:5},{t:'cone',x:50,y:90}],
+      kf:[
+        {p:0,  pl:[{id:'A',x:50,y:88,c:'#3b82f6',l:'A'},{id:'D',x:50,y:55,c:'#ef4444',l:'D'},{id:'GK',x:50,y:14,c:'#f59e0b',l:'GK'}],ball:{x:50,y:88},trails:[]},
+        {p:.28, pl:[{id:'A',x:50,y:68,c:'#3b82f6',l:'A'},{id:'D',x:50,y:55,c:'#ef4444',l:'D'},{id:'GK',x:50,y:14,c:'#f59e0b',l:'GK'}],ball:{x:50,y:68},trails:[]},
+        {p:.50, pl:[{id:'A',x:38,y:56,c:'#3b82f6',l:'A'},{id:'D',x:50,y:52,c:'#ef4444',l:'D'},{id:'GK',x:52,y:14,c:'#f59e0b',l:'GK'}],ball:{x:38,y:56},trails:[]},
+        {p:.72, pl:[{id:'A',x:36,y:40,c:'#3b82f6',l:'A'},{id:'D',x:50,y:52,c:'#ef4444',l:'D'},{id:'GK',x:42,y:14,c:'#f59e0b',l:'GK'}],ball:{x:36,y:40},trails:[]},
+        {p:1,   pl:[{id:'A',x:36,y:40,c:'#3b82f6',l:'A'},{id:'D',x:50,y:52,c:'#ef4444',l:'D'},{id:'GK',x:42,y:14,c:'#f59e0b',l:'GK'}],ball:{x:33,y:7},trails:[{x1:36,y1:40,x2:33,y2:7,c:'#fbbf24'}]},
+      ]};
+    case 4: return { // Rondo
+      type:'mini',
+      static:[{t:'box',x:12,y:15,w:76,h:70}],
+      kf:[
+        {p:0,  pl:[{id:'O1',x:12,y:15,c:'#3b82f6',l:'O'},{id:'O2',x:88,y:15,c:'#3b82f6',l:'O'},{id:'O3',x:88,y:85,c:'#3b82f6',l:'O'},{id:'O4',x:12,y:85,c:'#3b82f6',l:'O'},{id:'D1',x:37,y:44,c:'#ef4444',l:'D'},{id:'D2',x:58,y:56,c:'#ef4444',l:'D'}],ball:{x:12,y:15},trails:[]},
+        {p:.2,  pl:[{id:'O1',x:12,y:15,c:'#3b82f6',l:'O'},{id:'O2',x:88,y:15,c:'#3b82f6',l:'O'},{id:'O3',x:88,y:85,c:'#3b82f6',l:'O'},{id:'O4',x:12,y:85,c:'#3b82f6',l:'O'},{id:'D1',x:48,y:24,c:'#ef4444',l:'D'},{id:'D2',x:58,y:56,c:'#ef4444',l:'D'}],ball:{x:88,y:15},trails:[{x1:12,y1:15,x2:88,y2:15}]},
+        {p:.4,  pl:[{id:'O1',x:12,y:15,c:'#3b82f6',l:'O'},{id:'O2',x:88,y:15,c:'#3b82f6',l:'O'},{id:'O3',x:88,y:85,c:'#3b82f6',l:'O'},{id:'O4',x:12,y:85,c:'#3b82f6',l:'O'},{id:'D1',x:74,y:44,c:'#ef4444',l:'D'},{id:'D2',x:70,y:65,c:'#ef4444',l:'D'}],ball:{x:88,y:85},trails:[{x1:88,y1:15,x2:88,y2:85}]},
+        {p:.6,  pl:[{id:'O1',x:12,y:15,c:'#3b82f6',l:'O'},{id:'O2',x:88,y:15,c:'#3b82f6',l:'O'},{id:'O3',x:88,y:85,c:'#3b82f6',l:'O'},{id:'O4',x:12,y:85,c:'#3b82f6',l:'O'},{id:'D1',x:52,y:74,c:'#ef4444',l:'D'},{id:'D2',x:36,y:65,c:'#ef4444',l:'D'}],ball:{x:12,y:85},trails:[{x1:88,y1:85,x2:12,y2:85}]},
+        {p:.8,  pl:[{id:'O1',x:12,y:15,c:'#3b82f6',l:'O'},{id:'O2',x:88,y:15,c:'#3b82f6',l:'O'},{id:'O3',x:88,y:85,c:'#3b82f6',l:'O'},{id:'O4',x:12,y:85,c:'#3b82f6',l:'O'},{id:'D1',x:27,y:46,c:'#ef4444',l:'D'},{id:'D2',x:37,y:36,c:'#ef4444',l:'D'}],ball:{x:12,y:15},trails:[{x1:12,y1:85,x2:12,y2:15}]},
+        {p:1,   pl:[{id:'O1',x:12,y:15,c:'#3b82f6',l:'O'},{id:'O2',x:88,y:15,c:'#3b82f6',l:'O'},{id:'O3',x:88,y:85,c:'#3b82f6',l:'O'},{id:'O4',x:12,y:85,c:'#3b82f6',l:'O'},{id:'D1',x:37,y:44,c:'#ef4444',l:'D'},{id:'D2',x:58,y:56,c:'#ef4444',l:'D'}],ball:{x:88,y:15},trails:[{x1:12,y1:15,x2:88,y2:15}]},
+      ]};
+    case 5: return { // Gate Dribbling
+      type:'mini',
+      static:[{t:'gate',x:22,y:28},{t:'gate',x:55,y:18},{t:'gate',x:78,y:42},{t:'gate',x:35,y:65},{t:'gate',x:65,y:74},{t:'gate',x:82,y:58}],
+      kf: (() => {
+        const path=[{x:8,y:88},{x:22,y:28},{x:55,y:18},{x:78,y:42},{x:65,y:74},{x:35,y:65},{x:82,y:58},{x:8,y:88}];
+        return path.map((p,i)=>({p:i/(path.length-1),pl:[{id:'P',x:p.x,y:p.y,c:'#22c55e',l:'P'}],
+          ball:{x:p.x+2,y:p.y},trails:i>0?[{x1:path[i-1].x,y1:path[i-1].y,x2:p.x,y2:p.y,c:'#86efac'}]:[]}));
+      })()};
+    case 6: return { // 2v1
+      type:'half',
+      static:[{t:'goal',x:50,y:5},{t:'cone',x:36,y:90},{t:'cone',x:64,y:90}],
+      kf:[
+        {p:0,  pl:[{id:'A1',x:36,y:88,c:'#3b82f6',l:'A1'},{id:'A2',x:64,y:88,c:'#3b82f6',l:'A2'},{id:'D',x:50,y:52,c:'#ef4444',l:'D'},{id:'GK',x:50,y:14,c:'#f59e0b',l:'GK'}],ball:{x:36,y:88},trails:[]},
+        {p:.25, pl:[{id:'A1',x:36,y:64,c:'#3b82f6',l:'A1'},{id:'A2',x:78,y:60,c:'#3b82f6',l:'A2'},{id:'D',x:43,y:52,c:'#ef4444',l:'D'},{id:'GK',x:50,y:14,c:'#f59e0b',l:'GK'}],ball:{x:36,y:64},trails:[]},
+        {p:.50, pl:[{id:'A1',x:36,y:44,c:'#3b82f6',l:'A1'},{id:'A2',x:82,y:40,c:'#3b82f6',l:'A2'},{id:'D',x:40,y:46,c:'#ef4444',l:'D'},{id:'GK',x:50,y:14,c:'#f59e0b',l:'GK'}],ball:{x:36,y:44},trails:[]},
+        {p:.70, pl:[{id:'A1',x:36,y:44,c:'#3b82f6',l:'A1'},{id:'A2',x:82,y:40,c:'#3b82f6',l:'A2'},{id:'D',x:40,y:46,c:'#ef4444',l:'D'},{id:'GK',x:64,y:14,c:'#f59e0b',l:'GK'}],ball:{x:82,y:40},trails:[{x1:36,y1:44,x2:82,y2:40}]},
+        {p:1,   pl:[{id:'A1',x:36,y:44,c:'#3b82f6',l:'A1'},{id:'A2',x:82,y:38,c:'#3b82f6',l:'A2'},{id:'D',x:40,y:46,c:'#ef4444',l:'D'},{id:'GK',x:64,y:14,c:'#f59e0b',l:'GK'}],ball:{x:70,y:7},trails:[{x1:82,y1:38,x2:70,y2:7,c:'#fbbf24'}]},
+      ]};
+    case 7: return { // Crossing
+      type:'half',
+      static:[{t:'goal',x:50,y:5},{t:'cone',x:88,y:74}],
+      kf:[
+        {p:0,  pl:[{id:'W',x:88,y:68,c:'#22c55e',l:'W'},{id:'S',x:42,y:44,c:'#3b82f6',l:'S'},{id:'CM',x:60,y:52,c:'#3b82f6',l:'CM'},{id:'GK',x:50,y:14,c:'#f59e0b',l:'GK'}],ball:{x:88,y:68},trails:[]},
+        {p:.3,  pl:[{id:'W',x:88,y:40,c:'#22c55e',l:'W'},{id:'S',x:36,y:28,c:'#3b82f6',l:'S'},{id:'CM',x:55,y:34,c:'#3b82f6',l:'CM'},{id:'GK',x:50,y:14,c:'#f59e0b',l:'GK'}],ball:{x:88,y:40},trails:[]},
+        {p:.62, pl:[{id:'W',x:88,y:28,c:'#22c55e',l:'W'},{id:'S',x:33,y:20,c:'#3b82f6',l:'S'},{id:'CM',x:52,y:24,c:'#3b82f6',l:'CM'},{id:'GK',x:44,y:14,c:'#f59e0b',l:'GK'}],ball:{x:88,y:28},trails:[]},
+        {p:.82, pl:[{id:'W',x:88,y:28,c:'#22c55e',l:'W'},{id:'S',x:33,y:20,c:'#3b82f6',l:'S'},{id:'CM',x:52,y:24,c:'#3b82f6',l:'CM'},{id:'GK',x:44,y:14,c:'#f59e0b',l:'GK'}],ball:{x:35,y:20},trails:[{x1:88,y1:28,x2:35,y2:20}]},
+        {p:1,   pl:[{id:'W',x:88,y:28,c:'#22c55e',l:'W'},{id:'S',x:33,y:20,c:'#3b82f6',l:'S'},{id:'CM',x:52,y:24,c:'#3b82f6',l:'CM'},{id:'GK',x:44,y:14,c:'#f59e0b',l:'GK'}],ball:{x:36,y:7},trails:[{x1:35,y1:20,x2:36,y2:7,c:'#fbbf24'}]},
+      ]};
+    case 8: return { // Shadow
+      type:'mini',
+      static:[{t:'box',x:10,y:10,w:80,h:80},{t:'label',txt:'GOAL ↓',x:50,y:95}],
+      kf:[
+        {p:0,   pl:[{id:'A',x:30,y:38,c:'#3b82f6',l:'A'},{id:'D',x:38,y:54,c:'#ef4444',l:'D'}],ball:null,trails:[]},
+        {p:.2,  pl:[{id:'A',x:58,y:28,c:'#3b82f6',l:'A'},{id:'D',x:64,y:44,c:'#ef4444',l:'D'}],ball:null,trails:[]},
+        {p:.4,  pl:[{id:'A',x:72,y:56,c:'#3b82f6',l:'A'},{id:'D',x:74,y:68,c:'#ef4444',l:'D'}],ball:null,trails:[]},
+        {p:.6,  pl:[{id:'A',x:44,y:68,c:'#3b82f6',l:'A'},{id:'D',x:50,y:78,c:'#ef4444',l:'D'}],ball:null,trails:[]},
+        {p:.8,  pl:[{id:'A',x:22,y:52,c:'#3b82f6',l:'A'},{id:'D',x:30,y:64,c:'#ef4444',l:'D'}],ball:null,trails:[]},
+        {p:1,   pl:[{id:'A',x:30,y:38,c:'#3b82f6',l:'A'},{id:'D',x:38,y:54,c:'#ef4444',l:'D'}],ball:null,trails:[]},
+      ]};
+    case 9: return { // 3v2
+      type:'half',
+      static:[{t:'goal',x:50,y:5}],
+      kf:[
+        {p:0,  pl:[{id:'A1',x:50,y:92,c:'#3b82f6',l:'A1'},{id:'A2',x:26,y:88,c:'#3b82f6',l:'A2'},{id:'A3',x:74,y:88,c:'#3b82f6',l:'A3'},{id:'D1',x:36,y:52,c:'#ef4444',l:'D1'},{id:'D2',x:64,y:52,c:'#ef4444',l:'D2'},{id:'GK',x:50,y:14,c:'#f59e0b',l:'GK'}],ball:{x:50,y:92},trails:[]},
+        {p:.28, pl:[{id:'A1',x:50,y:68,c:'#3b82f6',l:'A1'},{id:'A2',x:18,y:62,c:'#3b82f6',l:'A2'},{id:'A3',x:78,y:62,c:'#3b82f6',l:'A3'},{id:'D1',x:36,y:52,c:'#ef4444',l:'D1'},{id:'D2',x:64,y:52,c:'#ef4444',l:'D2'},{id:'GK',x:50,y:14,c:'#f59e0b',l:'GK'}],ball:{x:50,y:68},trails:[]},
+        {p:.52, pl:[{id:'A1',x:50,y:52,c:'#3b82f6',l:'A1'},{id:'A2',x:16,y:44,c:'#3b82f6',l:'A2'},{id:'A3',x:78,y:44,c:'#3b82f6',l:'A3'},{id:'D1',x:42,y:48,c:'#ef4444',l:'D1'},{id:'D2',x:60,y:48,c:'#ef4444',l:'D2'},{id:'GK',x:50,y:14,c:'#f59e0b',l:'GK'}],ball:{x:50,y:52},trails:[]},
+        {p:.72, pl:[{id:'A1',x:50,y:52,c:'#3b82f6',l:'A1'},{id:'A2',x:16,y:36,c:'#3b82f6',l:'A2'},{id:'A3',x:78,y:44,c:'#3b82f6',l:'A3'},{id:'D1',x:42,y:48,c:'#ef4444',l:'D1'},{id:'D2',x:60,y:48,c:'#ef4444',l:'D2'},{id:'GK',x:32,y:14,c:'#f59e0b',l:'GK'}],ball:{x:16,y:36},trails:[{x1:50,y1:52,x2:16,y2:36}]},
+        {p:1,   pl:[{id:'A1',x:50,y:52,c:'#3b82f6',l:'A1'},{id:'A2',x:16,y:28,c:'#3b82f6',l:'A2'},{id:'A3',x:78,y:44,c:'#3b82f6',l:'A3'},{id:'D1',x:42,y:48,c:'#ef4444',l:'D1'},{id:'D2',x:60,y:48,c:'#ef4444',l:'D2'},{id:'GK',x:32,y:14,c:'#f59e0b',l:'GK'}],ball:{x:26,y:7},trails:[{x1:16,y1:28,x2:26,y2:7,c:'#fbbf24'}]},
+      ]};
+    case 10: return { // Switch of play
+      type:'mini',
+      static:[{t:'vline',x:50},{t:'label',txt:'Congested',x:74,y:92},{t:'label',txt:'Space!',x:18,y:92}],
+      kf:[
+        {p:0,  pl:[{id:'LW',x:12,y:35,c:'#3b82f6',l:'LW'},{id:'CM',x:50,y:50,c:'#3b82f6',l:'CM'},{id:'RW',x:82,y:35,c:'#22c55e',l:'RW'},{id:'D1',x:68,y:34,c:'#ef4444',l:'D'},{id:'D2',x:74,y:52,c:'#ef4444',l:'D'}],ball:{x:82,y:35},trails:[]},
+        {p:.25, pl:[{id:'LW',x:12,y:35,c:'#3b82f6',l:'LW'},{id:'CM',x:50,y:50,c:'#3b82f6',l:'CM'},{id:'RW',x:82,y:35,c:'#22c55e',l:'RW'},{id:'D1',x:68,y:34,c:'#ef4444',l:'D'},{id:'D2',x:74,y:52,c:'#ef4444',l:'D'}],ball:{x:50,y:50},trails:[{x1:82,y1:35,x2:50,y2:50}]},
+        {p:.50, pl:[{id:'LW',x:12,y:35,c:'#22c55e',l:'LW'},{id:'CM',x:50,y:50,c:'#3b82f6',l:'CM'},{id:'RW',x:75,y:40,c:'#22c55e',l:'RW'},{id:'D1',x:62,y:40,c:'#ef4444',l:'D'},{id:'D2',x:68,y:55,c:'#ef4444',l:'D'}],ball:{x:50,y:50},trails:[]},
+        {p:.72, pl:[{id:'LW',x:12,y:35,c:'#22c55e',l:'LW'},{id:'CM',x:50,y:50,c:'#3b82f6',l:'CM'},{id:'RW',x:68,y:42,c:'#22c55e',l:'RW'},{id:'D1',x:56,y:42,c:'#ef4444',l:'D'},{id:'D2',x:64,y:56,c:'#ef4444',l:'D'}],ball:{x:12,y:35},trails:[{x1:50,y1:50,x2:12,y2:35,c:'#fbbf24'}]},
+        {p:1,   pl:[{id:'LW',x:12,y:20,c:'#22c55e',l:'LW'},{id:'CM',x:42,y:40,c:'#3b82f6',l:'CM'},{id:'RW',x:62,y:44,c:'#22c55e',l:'RW'},{id:'D1',x:26,y:30,c:'#ef4444',l:'D'},{id:'D2',x:50,y:50,c:'#ef4444',l:'D'}],ball:{x:12,y:20},trails:[]},
+      ]};
+  }
+  return {type:'mini',static:[],kf:[]};
 }
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let currentDrill = 0;
+let isPlaying = false;
+let progress = 0;
+let rafId = null;
+let startTime = null;
+let pausedAt = 0;
+const DURATION = 5000;
+let filter = 'All';
+
+// ─── CANVAS SETUP ─────────────────────────────────────────────────────────────
+const canvas = document.getElementById('field-canvas');
+const ctx = canvas.getContext('2d');
+let CW, CH;
+
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  const maxW = Math.min(wrap.clientWidth - 24, 420);
+  const drill = DRILLS[currentDrill];
+  const data = getKeyframes(drill.id);
+  const ratio = data.type === 'half' ? 1 : 0.75;
+  CW = maxW; CH = Math.round(maxW * ratio);
+  canvas.width = CW; canvas.height = CH;
+  canvas.style.width = CW + 'px'; canvas.style.height = CH + 'px';
+}
+
+// ─── LERP & INTERPOLATION ─────────────────────────────────────────────────────
+function lerp(a,b,t){return a+(b-a)*t}
+function easeInOut(t){return t<.5?2*t*t:-1+(4-2*t)*t}
+
+function interpolate(kf, prog) {
+  if(!kf||!kf.length) return null;
+  if(prog<=0) return kf[0];
+  if(prog>=1) return kf[kf.length-1];
+  let lo=0,hi=kf.length-1;
+  for(let i=0;i<kf.length-1;i++){
+    if(prog>=kf[i].p&&prog<=kf[i+1].p){lo=i;hi=i+1;break}
+  }
+  const span=kf[hi].p-kf[lo].p;
+  const lt=span===0?0:(prog-kf[lo].p)/span;
+  const et=easeInOut(lt);
+  const a=kf[lo],b=kf[hi];
+  const players=a.pl.map(pa=>{
+    const pb=b.pl.find(p=>p.id===pa.id)||pa;
+    return{...pa,x:lerp(pa.x,pb.x,et),y:lerp(pa.y,pb.y,et)};
+  });
+  let ball=null;
+  if(a.ball&&b.ball) ball={x:lerp(a.ball.x,b.ball.x,et),y:lerp(a.ball.y,b.ball.y,et)};
+  else if(a.ball&&et<.5) ball=a.ball;
+  else if(b.ball) ball=b.ball;
+  const trails=et>.35?(b.trails||[]):(a.trails||[]);
+  return{players,ball,trails};
+}
+
+// ─── DRAWING ──────────────────────────────────────────────────────────────────
+function pct(v,dim){return(v/100)*dim}
+function px(v){return pct(v,CW)}
+function py(v){return pct(v,CH)}
+
+function drawField(type) {
+  // Grass stripes
+  for(let i=0;i<8;i++){
+    ctx.fillStyle=i%2===0?'#166534':'#15803d';
+    ctx.fillRect(i*(CW/8),0,CW/8,CH);
+  }
+  // Border
+  ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=2;ctx.lineJoin='round';
+  ctx.strokeRect(6,6,CW-12,CH-12);
+  if(type==='half'){
+    // Penalty area
+    ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=1.5;
+    ctx.strokeRect(px(25),py(0),px(50),py(22));
+  }
+}
+
+function drawArrow(x1,y1,x2,y2,col,width){
+  ctx.strokeStyle=col;ctx.lineWidth=width;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  const angle=Math.atan2(y2-y1,x2-x1);const s=10;
+  ctx.fillStyle=col;ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-s*Math.cos(angle-.45),y2-s*Math.sin(angle-.45));
+  ctx.lineTo(x2-s*Math.cos(angle+.45),y2-s*Math.sin(angle+.45));
+  ctx.closePath();ctx.fill();
+}
+
+function drawScene(data, frame) {
+  ctx.clearRect(0,0,CW,CH);
+  drawField(data.type);
+
+  // Static elements
+  (data.static||[]).forEach(el=>{
+    if(el.t==='cone'){
+      ctx.fillStyle='#f97316';ctx.beginPath();
+      ctx.moveTo(px(el.x),py(el.y)-8);
+      ctx.lineTo(px(el.x)-5,py(el.y)+6);
+      ctx.lineTo(px(el.x)+5,py(el.y)+6);
+      ctx.closePath();ctx.fill();
+    } else if(el.t==='gate'){
+      ctx.fillStyle='#f97316';
+      ctx.beginPath();ctx.moveTo(px(el.x)-10,py(el.y)-7);ctx.lineTo(px(el.x)-15,py(el.y)+5);ctx.lineTo(px(el.x)-5,py(el.y)+5);ctx.closePath();ctx.fill();
+      ctx.beginPath();ctx.moveTo(px(el.x)+10,py(el.y)-7);ctx.lineTo(px(el.x)+5,py(el.y)+5);ctx.lineTo(px(el.x)+15,py(el.y)+5);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1;ctx.setLineDash([2,2]);
+      ctx.beginPath();ctx.moveTo(px(el.x)-10,py(el.y));ctx.lineTo(px(el.x)+10,py(el.y));ctx.stroke();ctx.setLineDash([]);
+    } else if(el.t==='goal'){
+      ctx.strokeStyle='#fff';ctx.lineWidth=2.5;
+      ctx.strokeRect(px(el.x)-38,py(el.y),76,18);
+      ctx.fillStyle='rgba(255,255,255,0.08)';ctx.fillRect(px(el.x)-38,py(el.y),76,18);
+      ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font='bold 9px Courier New';ctx.textAlign='center';
+      ctx.fillText('GOAL',px(el.x),py(el.y)+12);
+    } else if(el.t==='box'){
+      ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=1.5;ctx.setLineDash([5,3]);
+      ctx.strokeRect(px(el.x),py(el.y),(el.w/100)*CW,(el.h/100)*CH);ctx.setLineDash([]);
+    } else if(el.t==='vline'){
+      ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.moveTo(px(el.x),0);ctx.lineTo(px(el.x),CH);ctx.stroke();ctx.setLineDash([]);
+    } else if(el.t==='dline'){
+      ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.moveTo(px(el.x1),py(el.y1));ctx.lineTo(px(el.x2),py(el.y2));ctx.stroke();ctx.setLineDash([]);
+    } else if(el.t==='label'){
+      ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='italic 10px Courier New';ctx.textAlign='center';
+      ctx.fillText(el.txt,px(el.x),py(el.y));
+    }
+  });
+
+  if(!frame) return;
+
+  // Trails
+  (frame.trails||[]).forEach(tr=>{
+    drawArrow(px(tr.x1),py(tr.y1),px(tr.x2),py(tr.y2),tr.c||'#fcd34d',2.5);
+  });
+
+  // Players
+  (frame.players||[]).forEach(p=>{
+    const x=px(p.x),y=py(p.y);
+    ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=6;
+    ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(x,y,13,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,13,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font='bold 9px Courier New';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(p.l,x,y);ctx.textBaseline='alphabetic';
+  });
+
+  // Ball
+  if(frame.ball){
+    const bx=px(frame.ball.x),by=py(frame.ball.y);
+    ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=4;
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(bx,by,7,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.strokeStyle='#333';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(bx,by,7,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='rgba(0,0,0,0.2)';ctx.beginPath();ctx.arc(bx,by,3.5,0,Math.PI*2);ctx.fill();
+  }
+}
+
+// ─── UPDATE UI ────────────────────────────────────────────────────────────────
+function updateUI() {
+  const d = DRILLS[currentDrill];
+  const data = getKeyframes(d.id);
+
+  document.getElementById('drill-badge').textContent = `DRILL ${d.id} OF 10`;
+  document.getElementById('drill-number').textContent = d.id;
+  document.getElementById('drill-number').style.background = d.pillarColor;
+  document.getElementById('drill-name').textContent = d.name;
+  document.getElementById('meta-dur').textContent = `⏱ ${d.duration}`;
+  document.getElementById('meta-players').textContent = `👥 ${d.players}`;
+  document.getElementById('meta-focus').textContent = `🎯 ${d.pillar}`;
+  document.getElementById('cue-text').textContent = `"${d.cue}"`;
+
+  // Steps
+  const stepsList = document.getElementById('steps-list');
+  stepsList.innerHTML = '';
+  d.steps.forEach((s,i)=>{
+    stepsList.innerHTML += `<div class="step-row" id="step-${i}">
+      <div class="step-num" id="snum-${i}">${i+1}</div>
+      <div class="step-text" id="stxt-${i}">${s}</div>
+    </div>`;
+  });
+
+  // Dots
+  buildDots();
+  resizeCanvas();
+  renderFrame();
+}
+
+function updateSteps(prog) {
+  const d = DRILLS[currentDrill];
+  const n = d.steps.length;
+  const idx = Math.min(Math.floor(prog * n), n-1);
+  d.steps.forEach((_,i)=>{
+    const num=document.getElementById(`snum-${i}`);
+    const txt=document.getElementById(`stxt-${i}`);
+    const row=document.getElementById(`step-${i}`);
+    if(!num||!txt||!row) return;
+    if(isPlaying){
+      row.style.opacity=i===idx?'1':i<idx?'0.4':'0.55';
+      num.className='step-num'+(i===idx?' active':i<idx?' done':'');
+      txt.className='step-text'+(i===idx?' active':'');
+    } else {
+      row.style.opacity='1';
+      num.className='step-num';
+      txt.className='step-text';
+    }
+  });
+}
+
+function renderFrame() {
+  const d = DRILLS[currentDrill];
+  const data = getKeyframes(d.id);
+  const frame = interpolate(data.kf, progress);
+  drawScene(data, frame);
+  document.getElementById('progress-fill').style.width = (progress*100)+'%';
+  updateSteps(progress);
+}
+
+// ─── ANIMATION LOOP ──────────────────────────────────────────────────────────
+function loop(ts) {
+  if(!startTime) startTime = ts - pausedAt * DURATION;
+  const elapsed = ts - startTime;
+  progress = (elapsed % DURATION) / DURATION;
+  renderFrame();
+  rafId = requestAnimationFrame(loop);
+}
+
+function play() {
+  if(isPlaying) return;
+  isPlaying = true;
+  document.getElementById('btn-play').textContent = '⏸ Pause';
+  document.getElementById('btn-play').className = 'ctrl-btn playing';
+  rafId = requestAnimationFrame(loop);
+}
+
+function pause() {
+  if(!isPlaying) return;
+  isPlaying = false;
+  pausedAt = progress;
+  startTime = null;
+  cancelAnimationFrame(rafId);
+  document.getElementById('btn-play').textContent = '▶ Play';
+  document.getElementById('btn-play').className = 'ctrl-btn paused';
+}
+
+function reset() {
+  pause();
+  progress = 0; pausedAt = 0; startTime = null;
+  renderFrame();
+}
+
+function selectDrill(idx) {
+  pause();
+  currentDrill = idx;
+  progress = 0; pausedAt = 0; startTime = null;
+  updateUI();
+}
+
+// ─── FILTER & DOTS ───────────────────────────────────────────────────────────
+function buildDots() {
+  const container = document.getElementById('drill-dots');
+  container.innerHTML = '';
+  DRILLS.forEach((d,i)=>{
+    const visible = filter==='All'||d.pillar===filter;
+    const btn = document.createElement('button');
+    btn.className = 'drill-dot'+(i===currentDrill?' active':'  inactive')+(visible?'':' hidden');
+    btn.style.background = i===currentDrill ? d.pillarColor : '';
+    btn.textContent = d.id;
+    btn.onclick = ()=>selectDrill(i);
+    container.appendChild(btn);
+  });
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    filter = btn.dataset.filter;
+    document.querySelectorAll('.filter-btn').forEach(b=>b.className='filter-btn inactive');
+    btn.className='filter-btn active';
+    // If current drill hidden by filter, jump to first visible
+    const d = DRILLS[currentDrill];
+    if(filter!=='All'&&d.pillar!==filter){
+      const first=DRILLS.findIndex(x=>x.pillar===filter);
+      if(first>=0) selectDrill(first);
+    }
+    buildDots();
+  };
+});
+
+document.getElementById('btn-play').onclick = ()=>{ isPlaying ? pause() : play(); };
+document.getElementById('btn-reset').onclick = reset;
+
+// ─── SWIPE ────────────────────────────────────────────────────────────────────
+let touchStartX = null;
+canvas.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX},{passive:true});
+canvas.addEventListener('touchend',e=>{
+  if(touchStartX===null) return;
+  const dx=e.changedTouches[0].clientX-touchStartX;
+  if(Math.abs(dx)>50){
+    const next=dx<0?Math.min(currentDrill+1,DRILLS.length-1):Math.max(currentDrill-1,0);
+    if(next!==currentDrill) selectDrill(next);
+  }
+  touchStartX=null;
+},{passive:true});
+
+// ─── RESIZE ──────────────────────────────────────────────────────────────────
+window.addEventListener('resize',()=>{resizeCanvas();renderFrame()});
+
+// ─── INSTALL BANNER ──────────────────────────────────────────────────────────
+const isIOS=(/iphone|ipad|ipod/i.test(navigator.userAgent));
+const isStandalone=window.navigator.standalone===true;
+if(isIOS&&!isStandalone){
+  document.getElementById('install-banner').classList.add('show');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById('btn-play').className='ctrl-btn paused';
+updateUI();
+</script>
+
+</body>
+</html>
